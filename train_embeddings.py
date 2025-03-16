@@ -3,7 +3,8 @@ import argparse
 import torch
 from torch.utils.data import Dataset, DataLoader
 from model import (
-    SiameseNet, ContrastiveLoss, compose_train_transforms, compose_valid_transforms,
+    SiameseNet, ContrastiveLoss, AugmentedSiameseDataset,
+    compose_train_transforms, compose_valid_transforms,
     resize_size, padded_size
 )
 import numpy as np
@@ -76,26 +77,6 @@ def fit(
         print(f"Done Epoch {epoch + 1} in {(time.time() - start) / 60}")
 
 
-class AugmentedSiameseDataset(Dataset):
-    def __init__(self, dataset, transform_1=None, transform_2=None):
-        self.dataset = dataset
-        self.transform_1 = transform_1
-        self.transform_2 = transform_2
-
-    def __getitem__(self, index):
-        c, x1p, x2p = self.dataset[index]
-        x1 = cv.cvtColor(cv.imread(x1p), cv.COLOR_BGR2RGB)
-        x2 = cv.cvtColor(cv.imread(x2p), cv.COLOR_BGR2RGB)
-        if self.transform_1:
-            x1 = self.transform_2(x1)
-        if self.transform_2:
-            x2 = self.transform_2(x2)
-        return c, x1, x2
-
-    def __len__(self):
-        return len(self.dataset)
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root-folder', type=str, default=None)
@@ -129,37 +110,7 @@ def main():
     loader_train = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=True)
     loader_valid = DataLoader(dataset_valid, batch_size=args.batch_size, shuffle=True)
 
-    if args.draw:
-        go_train = False
-        for datapoint in loader_train:
-            def draw_image(c, im, imn):
-                im = np.transpose(
-                    (im.detach().numpy() * 255).astype(np.uint8), (1, 2, 0)
-                )[:, :, ::-1]
-                if c.numpy().astype(np.uint8) == 0:
-                    t = "NEG"
-                else:
-                    t = "POS"
-                im = im.copy()
-                cv.putText(im, t, (20, 20),
-                           cv.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), 1
-                )
-                cv.imshow(f"datapoint {imn}", im)
-
-            for b in range(args.batch_size):
-                c = datapoint[0][b]
-                i1 = datapoint[1][b]
-                i2 = datapoint[2][b]
-                draw_image(c, i1, 1)
-                draw_image(c, i2, 2)
-                if cv.waitKey() == ord('x'):
-                    go_train = True
-                    cv.destroyAllWindows()
-                    break
-
-            if go_train:
-                break
-
+ 
     cuda = torch.cuda.is_available()
     embeddings_trained_model_path_load = embeddings_trained_model_path \
         if os.path.isfile(embeddings_trained_model_path) else None
