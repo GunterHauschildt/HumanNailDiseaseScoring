@@ -1,5 +1,6 @@
 # HumanNailDiseaseScoring
-Scores human finger/toe nail healthyness.  
+Scores human finger/toe nail healthiness.   
+Using Kaggle's Nail Disease Image Classification Dataset, I used a Siamese NN to grade human nail healthiness.  
 
 ![Score 95 48](https://github.com/user-attachments/assets/86e29737-e10f-4e2b-b37d-a6698ace06c2)  
 ![Score 94 62](https://github.com/user-attachments/assets/4c4c020f-3fb9-47f7-9876-861cb72b5a71)  
